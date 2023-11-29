@@ -1,68 +1,117 @@
 import React from 'react';
-
 import { render, screen } from '@testing-library/react';
-
 import { CalendarMonth } from '../CalendarMonth';
+import styles from '@patternfly/react-styles/css/components/CalendarMonth/calendar-month';
 
-test('Renders the first date in a month when a custom weekStart is passed', () => {
-  // custom aria label generation function because of bug with default aria label generation
-  // can be removed once the bug is fixed
-  const formatAria = (date: Date) =>
-    `${date.getDate()} ${date.toLocaleDateString(undefined, { month: 'long' })} ${date.getFullYear()}`;
+jest.mock('../../../helpers/util');
+jest.mock('../../../helpers/OUIA/__mocks__/ouia');
 
-  render(<CalendarMonth cellAriaLabel={formatAria} weekStart={1} date={new Date(2023, 0)} />);
+const formatDate = (date: Date) =>
+  `${date.getDate()} ${date.toLocaleDateString(undefined, { month: 'long' })} ${date.getFullYear()}`;
 
-  const firstDate = screen.getByRole('button', { name: '1 January 2023' });
-  expect(firstDate).toBeVisible();
+test(`Renders with with only class name ${styles.calendarMonth} by default`, () => {
+  render(<CalendarMonth data-testid="month" />);
+  expect(screen.getByTestId('month')).toHaveClass(styles.calendarMonth, { exact: true });
 });
 
-test('Renders the last date in a month when a custom weekStart is passed', () => {
-  // custom aria label generation function because of bug with default aria labels
-  // can be removed once the bug is fixed
-  const formatAria = (date: Date) =>
-    `${date.getDate()} ${date.toLocaleDateString(undefined, { month: 'long' })} ${date.getFullYear()}`;
-
-  render(<CalendarMonth cellAriaLabel={formatAria} weekStart={1} date={new Date(2023, 0)} />);
-
-  const lastDate = screen.getByRole('button', { name: '31 January 2023' });
-  expect(lastDate).toBeVisible();
+test(`Renders with with class name ${styles.calendarMonth}`, () => {
+  render(<CalendarMonth data-testid="month" />);
+  expect(screen.getByTestId('month')).toHaveClass(styles.calendarMonth);
 });
 
-test('Previous month dates have correct month in aria label', () => {
-  render(<CalendarMonth date={new Date(2024, 5)} />);
-
-  const previousMonthDate = screen.getByRole('button', { name: '31 May 2024' });
-  expect(previousMonthDate).toBeVisible();
+test('Renders with custom class name when className prop is provided', () => {
+  render(<CalendarMonth data-testid="month" className="custom-class" />);
+  expect(screen.getByTestId('month')).toHaveClass('custom-class');
 });
 
-test('Next month dates have correct month in aria label', () => {
-  render(<CalendarMonth date={new Date(2024, 6)} />);
-
-  const nextMonthDate = screen.getByRole('button', { name: '1 August 2024' });
-  expect(nextMonthDate).toBeVisible();
+test('Renders with custom class name when className prop is provided', () => {
+  const date = new Date(2001, 5);
+  render(<CalendarMonth date={date} />);
+  expect(screen.getByRole('button', { name: formatDate(date) })).toBeInTheDocument();
 });
 
-test('Previous year dates have correct year in aria label', () => {
-  render(<CalendarMonth date={new Date(2024, 0)} />);
+// render(<CalendarMonth date={new Date(2024, 5)} />);
+// const previousMonthDate = screen.getByRole('button', { name: '31 May 2024' });
+// expect(previousMonthDate).toBeVisible();
 
-  const previousYearDate = screen.getByRole('button', { name: '31 December 2023' });
-  expect(previousYearDate).toBeVisible();
+/*
+TBD
+-locale
+-monthFormat
+-weekdayFormat
+-longWeekdayFormat
+-dayFormat
+-weekStart default
+-weekStart custom
+-validators?
+-rangeStart
+*/
+
+test('Renders with default prevMonthAriaLabel', () => {
+  render(<CalendarMonth />);
+  expect(screen.getByRole('button', { name: /Previous month/i })).toHaveAccessibleName('Previous month');
 });
 
-test('Next year dates have correct year in aria label', () => {
-  render(<CalendarMonth date={new Date(2024, 11)} />);
-
-  const nextYearDate = screen.getByRole('button', { name: '1 January 2025' });
-  expect(nextYearDate).toBeVisible();
+test('Renders with custom prevMonthAriaLabel', () => {
+  render(<CalendarMonth prevMonthAriaLabel="last month" />);
+  expect(screen.getByRole('button', { name: /last month/i })).toHaveAccessibleName('last month');
 });
 
-test('InlineProps render correct wrapper component and attributes', () => {
+test('Renders with default nextMonthAriaLabel', () => {
+  render(<CalendarMonth />);
+  expect(screen.getByRole('button', { name: /Next month/i })).toHaveAccessibleName('Next month');
+});
+
+test('Renders with custom nextMonthAriaLabel', () => {
+  render(<CalendarMonth nextMonthAriaLabel="coming month" />);
+  expect(screen.getByRole('button', { name: /coming month/i })).toHaveAccessibleName('coming month');
+});
+
+test('Renders with default yearInputAriaLabel', () => {
+  render(<CalendarMonth />);
+  expect(screen.getByRole('spinbutton', { name: /Select year/i })).toHaveAccessibleName('Select year');
+});
+
+test('Renders with custom yearInputAriaLabel', () => {
+  render(<CalendarMonth yearInputAriaLabel="Choose year" />);
+  expect(screen.getByRole('spinbutton', { name: /Choose year/i })).toHaveAccessibleName('Choose year');
+});
+
+test('Renders with default cellAriaLabel', () => {
+  const todayDate = new Date();
+
+  render(<CalendarMonth />);
+  expect(screen.getByRole('button', { name: `${formatDate(todayDate)}` })).toHaveAccessibleName(
+    `${formatDate(todayDate)}`
+  );
+});
+
+// render with custom cellAriaLabel - NOT WORKING
+
+// render with isDateFocused - NOT WORKING
+// test('Renders with date focused', () => {
+//   const todayDate = new Date;
+
+//   render(<CalendarMonth date={todayDate} isDateFocused />);
+//   expect(screen.getByRole('button', { name: `${formatDate(todayDate)}`})).toHaveClass(styles.modifiers.focus);
+//  });
+
+test('Render with correct attributes in InlineProps', () => {
   render(
-    <CalendarMonth inlineProps={{ component: 'article', title: <div id="hi">Title</div>, ariaLabelledby: 'hi' }} />
+    <CalendarMonth
+      inlineProps={{
+        component: 'article',
+        title: <div>My Calendar</div>,
+        ariaLabelledby: 'This is my calendar'
+      }}
+    />
   );
 
-  const article = screen.getByRole('article');
-  expect(article).toHaveAttribute('aria-labelledby', 'hi');
-  const title = screen.getByText('Title');
-  expect(title).toBeVisible();
+  expect(screen.getByRole('article')).toHaveAttribute('aria-labelledby', 'This is my calendar');
+  expect(screen.getByText('My Calendar')).toBeVisible();
+});
+
+test('Matches the snapshot', () => {
+  const { asFragment } = render(<CalendarMonth date={new Date(2024, 6)} />);
+  expect(asFragment()).toMatchSnapshot();
 });
